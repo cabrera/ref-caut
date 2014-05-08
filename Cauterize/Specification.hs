@@ -1,9 +1,9 @@
 module Cauterize.Specification
-  ( module Cauterize.Specification.Types
+  ( module Cauterize.Specification.AST
   , fromSchema
   ) where
 
-import Cauterize.Specification.Types
+import Cauterize.Specification.AST
 import Cauterize.FormHash
 import Cauterize.Common.BuiltIn
 import Cauterize.Common.Named

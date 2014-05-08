@@ -1,4 +1,4 @@
-module Cauterize.Specification.Types where
+module Cauterize.Specification.AST where
 
 import Cauterize.FormHash
 import Cauterize.Common.BuiltIn

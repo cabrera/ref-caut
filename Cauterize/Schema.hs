@@ -1,12 +1,12 @@
 module Cauterize.Schema 
   ( module Cauterize.Schema.Parser
-  , module Cauterize.Schema.Types
+  , module Cauterize.Schema.AST
   , module Cauterize.Schema.Utils
   , checkSchema
   ) where
 
 import Cauterize.Schema.Parser
-import Cauterize.Schema.Types
+import Cauterize.Schema.AST
 import Cauterize.Schema.Utils
 
 import Data.Maybe

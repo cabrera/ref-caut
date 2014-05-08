@@ -1,4 +1,4 @@
-module Cauterize.Schema.Types where
+module Cauterize.Schema.AST where
 
 import Cauterize.Common.BuiltIn
 import Cauterize.Common.Named

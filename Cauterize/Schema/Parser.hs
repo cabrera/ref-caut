@@ -5,7 +5,7 @@ import Control.Monad
 import Text.Parsec
 import Text.Parsec.String
 
-import Cauterize.Schema.Types
+import Cauterize.Schema.AST
 import Cauterize.Schema.Utils
 import Cauterize.Common.BuiltIn
 
