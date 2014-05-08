@@ -1,37 +1,23 @@
 module Cauterize.Schema 
-  ( module Cauterize.Schema.Parser
-  , module Cauterize.Schema.AST
-  , module Cauterize.Schema.Utils
-  , checkSchema
+  ( parseFile
+  , parseString
   ) where
 
-import Cauterize.Schema.Parser
-import Cauterize.Schema.AST
-import Cauterize.Schema.Utils
+import qualified Cauterize.Schema.Parser as P
+import qualified Cauterize.Schema.AST as AST
+import qualified Cauterize.Schema.Type as T
 
-import Data.Maybe
-import qualified Data.Map as M
+import Text.Parsec
 
-import Cauterize.Common.Named
+parseFile :: FilePath -> IO (Either String T.Schema)
+parseFile path = readFile path >>= parseString path
 
-data SchemaErrors = DuplicateNames [Name]
-                  | Cycles [Cycle]
-  deriving (Show)
-
-checkSchema :: Schema -> [SchemaErrors]
-checkSchema s@(Schema _ _ fs) = catMaybes [duplicateNames, cycles]
+parseString :: FilePath -> String -> IO (Either String T.Schema)
+parseString path str = 
+    return $ case parse P.parseSchema path str of
+                Left e -> Left $ show e
+                Right s -> check s
   where
-    duplicateNames = case duplicates $ map (\(FType t) -> cautName t) fs of
-                        [] -> Nothing
-                        ds -> Just $ DuplicateNames ds
-    cycles = case schemaCycles s of
-                [] -> Nothing
-                cs -> Just $ Cycles cs
-
-
-duplicates :: (Eq a, Ord a) => [a] -> [a]
-duplicates ins = map fst $ M.toList dups
-  where
-    dups = M.filter (>1) counts
-    counts = foldl insertWith M.empty ins
-    insertWith m x = M.insertWith ((+) :: (Int -> Int -> Int)) x 1 m
+    check s = case AST.checkSchema s of
+                [] -> Right $ T.fromAST s
+                es -> Left $ show es

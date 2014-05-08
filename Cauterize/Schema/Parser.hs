@@ -1,4 +1,4 @@
-module Cauterize.Schema.Parser (parseFile) where
+module Cauterize.Schema.Parser (parseSchema) where
 
 import Control.Monad
 
@@ -8,15 +8,6 @@ import Text.Parsec.String
 import Cauterize.Schema.AST
 import Cauterize.Schema.Utils
 import Cauterize.Common.BuiltIn
-
-parseFile :: FilePath -> IO (Either ParseError Schema)
-parseFile path = readFile path >>= parseString path
-
-parseString :: FilePath -> String -> IO (Either ParseError Schema)
-parseString path str = 
-  return $ case parse parseSchema path str of
-              Left e -> Left e
-              Right s -> Right s
 
 parseSchema :: Parser Schema
 parseSchema = pSexp "schema" $ do

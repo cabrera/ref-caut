@@ -118,6 +118,28 @@ referredNames (TEnum _ vs) = nub $ mapMaybe (\(EnumVariant _ n) -> n) vs
 referredNames (TPartial _ _ fs) = nub $ map (\(PartialVariant _ n) -> n) fs
 referredNames (TPad _ _) = []
 
+data SchemaErrors = DuplicateNames [Name]
+                  | Cycles [Cycle]
+  deriving (Show)
+
+checkSchema :: Schema -> [SchemaErrors]
+checkSchema s@(Schema _ _ fs) = catMaybes [duplicateNames, cycles]
+  where
+    duplicateNames = case duplicates $ map (\(FType t) -> cautName t) fs of
+                        [] -> Nothing
+                        ds -> Just $ DuplicateNames ds
+    cycles = case schemaCycles s of
+                [] -> Nothing
+                cs -> Just $ Cycles cs
+
+
+duplicates :: (Eq a, Ord a) => [a] -> [a]
+duplicates ins = map fst $ M.toList dups
+  where
+    dups = M.filter (>1) counts
+    counts = foldl insertWith M.empty ins
+    insertWith m x = M.insertWith ((+) :: (Int -> Int -> Int)) x 1 m
+
 instance CautName Type where
   cautName (TBuiltIn b) = show b
   cautName (TScalar n _) = n

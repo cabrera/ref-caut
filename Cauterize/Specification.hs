@@ -4,6 +4,7 @@ module Cauterize.Specification
   ) where
 
 import Cauterize.Specification.AST
+import qualified Cauterize.Schema.AST as SC
 import Cauterize.FormHash
 import Cauterize.Common.BuiltIn
 import Cauterize.Common.Named
