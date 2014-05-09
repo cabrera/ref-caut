@@ -1,4 +1,20 @@
-module Cauterize.Schema.AST where
+module Cauterize.Schema.AST
+  ( Schema(..)
+  , SchemaForm(..)
+  , Type(..)
+  , StructField(..)
+  , EnumVariant(..)
+  , SetField(..)
+  , PartialVariant(..)
+  , Name
+  , TypeIdMap
+
+  , schemaTypeMap
+  , schemaTypeIdMap
+  , schemaStructuralHash
+
+  , checkSchema
+  ) where
 
 import Cauterize.Common.BuiltIn
 import Cauterize.Common.Named
@@ -41,8 +57,8 @@ data Type = TBuiltIn BuiltIn
           | TScalar String BuiltIn
           | TConst String BuiltIn Integer
 
-          | TFixedArray String String Integer
-          | TBoundedArray String String Integer
+          | TFixedArray String Name Integer
+          | TBoundedArray String Name Integer
 
           | TStruct String [StructField]
           | TSet String [SetField]
@@ -53,16 +69,16 @@ data Type = TBuiltIn BuiltIn
           | TPad String Integer
   deriving (Show)
 
-data StructField = StructField String String
+data StructField = StructField String Name
   deriving (Show)
 
-data EnumVariant = EnumVariant String (Maybe String)
+data EnumVariant = EnumVariant String (Maybe Name)
   deriving (Show)
 
-data PartialVariant = PartialVariant String String
+data PartialVariant = PartialVariant String Name
   deriving (Show)
 
-data SetField = SetField String String
+data SetField = SetField String Name
   deriving (Show)
 
 -- | This function serves two purposes:
