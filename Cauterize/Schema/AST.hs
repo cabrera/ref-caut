@@ -10,7 +10,6 @@ module Cauterize.Schema.AST
   , TypeIdMap
 
   , schemaTypeMap
-  , schemaTypeIdMap
   , schemaStructuralHash
 
   , checkSchema
@@ -81,13 +80,10 @@ data PartialVariant = PartialVariant String Name
 data SetField = SetField String Name
   deriving (Show)
 
--- | This function serves two purposes:
---    1. If there are cycles in the schema, they are reported.
---    2. If the schema is valid, then a Map of names to Type IDs are produced.
-schemaTypeIdMap :: Schema -> Either [Cycle] TypeIdMap
-schemaTypeIdMap schema = case schemaCycles schema of
-                          [] -> Right resultMap
-                          cs -> Left cs
+-- This function must not be given an invalid Schema. Check it with checkSchema
+-- first.
+schemaTypeIdMap :: Schema -> TypeIdMap
+schemaTypeIdMap schema = resultMap
   where
     tyMap = schemaTypeMap schema
     resultMap = fmap hashType tyMap
@@ -97,24 +93,12 @@ schemaTypeIdMap schema = case schemaCycles schema of
     hashType t = let dirRefs = fromJust $ mapM (`M.lookup` resultMap) (referredNames t)
                  in finalize $ foldl formHashWith (formHashCtx t) dirRefs
 
-schemaCycles :: Schema -> [Cycle]
-schemaCycles s = typeCycles (map snd $ M.toList tyMap)
-  where
-    tyMap = schemaTypeMap s
-
 schemaTypeMap :: Schema -> M.Map Name Type
 schemaTypeMap (Schema _ _ fs) = M.fromList $ map (\(FType t) -> (cautName t, t)) fs
 
-typeCycles :: [Type] -> [Cycle]
-typeCycles ts = let ns = map (\t -> (cautName t, cautName t, referredNames t)) ts
-                in mapMaybe isScc (stronglyConnComp ns)
-  where
-    isScc (CyclicSCC vs) = Just vs
-    isScc _ = Nothing
-
 schemaStructuralHash :: Schema -> FormHash
 schemaStructuralHash s@(Schema n v fs) =
-    let (Right m) = schemaTypeIdMap s
+    let m = schemaTypeIdMap s
         ctx = hashInit `hashFn` n `hashFn` v
     in finalize $ foldl (hshFn m) ctx fs
   where
@@ -144,17 +128,26 @@ checkSchema s@(Schema _ _ fs) = catMaybes [duplicateNames, cycles]
     duplicateNames = case duplicates $ map (\(FType t) -> cautName t) fs of
                         [] -> Nothing
                         ds -> Just $ DuplicateNames ds
-    cycles = case schemaCycles s of
+
+    cycles = case schemaCycles of
                 [] -> Nothing
                 cs -> Just $ Cycles cs
 
+    schemaCycles = typeCycles (map snd $ M.toList tyMap)
+      where
+        tyMap = schemaTypeMap s
 
-duplicates :: (Eq a, Ord a) => [a] -> [a]
-duplicates ins = map fst $ M.toList dups
-  where
-    dups = M.filter (>1) counts
-    counts = foldl insertWith M.empty ins
-    insertWith m x = M.insertWith ((+) :: (Int -> Int -> Int)) x 1 m
+    typeCycles ts = let ns = map (\t -> (cautName t, cautName t, referredNames t)) ts
+                    in mapMaybe isScc (stronglyConnComp ns)
+      where
+        isScc (CyclicSCC vs) = Just vs
+        isScc _ = Nothing
+
+    duplicates ins = map fst $ M.toList dups
+      where
+        dups = M.filter (>1) counts
+        counts = foldl insertWith M.empty ins
+        insertWith m x = M.insertWith ((+) :: (Int -> Int -> Int)) x 1 m
 
 instance CautName Type where
   cautName (TBuiltIn b) = show b
